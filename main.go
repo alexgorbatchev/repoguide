@@ -38,8 +38,11 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) error {
-	if len(args) > 0 && args[0] == "init" {
-		return runInit(args[1:], stdout, stderr)
+	if len(args) > 0 {
+		switch args[0] {
+		case "skill":
+			return runSkill(args[1:], stdout, stderr)
+		}
 	}
 
 	fs := flag.NewFlagSet("repoguide", flag.ContinueOnError)
@@ -85,8 +88,8 @@ exported symbols, cross-file dependencies, and call graph edges.
 path defaults to the current directory.
 
 Subcommands:
-  init    write a repoguide usage section to a CLAUDE.md file
-          run "repoguide init --help" for details
+  skill   print the bundled OpenCode skill markdown
+          run "repoguide skill --help" for details
 
 Examples:
   repoguide                                  current directory, all languages
@@ -95,7 +98,7 @@ Examples:
   repoguide -n 20                            top 20 files (large repos)
   repoguide --cache .repoguide-cache         cache output for faster re-runs
   repoguide --format v1                      use legacy output format
-  repoguide init                             add repoguide section to ./CLAUDE.md
+  repoguide skill                            print bundled OpenCode skill
 
   repoguide --with-tests                     include test files (excluded by default)
   repoguide --symbol BuildGraph              show BuildGraph and its callers/callees

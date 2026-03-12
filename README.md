@@ -103,34 +103,21 @@ numbers with `Read(offset=N)` for precise navigation without scanning.
 
 ## Subcommands
 
-### `repoguide init`
+### `repoguide skill`
 
 ```
-repoguide init [--dry-run] [path-to-CLAUDE.md]
+repoguide skill
 ```
 
-Writes a repoguide usage section to a CLAUDE.md file, creating it if it doesn't
-exist. The section instructs Claude Code to call `repoguide` at the start of
-tasks and explains how to read the output.
+Prints the bundled OpenCode skill markdown to stdout.
 
 ```
-repoguide init                     # write to ./CLAUDE.md
-repoguide init path/to/CLAUDE.md   # explicit path
-repoguide init --dry-run           # print the generated section, no file written
-repoguide init --dry-run CLAUDE.md # print what the full file would look like
+repoguide skill
+repoguide skill > .opencode/skills/repoguide/SKILL.md
 ```
 
-The command reports what it did: `created`, `updated`, or `already up to date`.
-Safe to run repeatedly — skips the write when nothing has changed.
-
-The block is wrapped in HTML sentinel comments so subsequent runs replace only
-that section, leaving surrounding content untouched:
-
-```
-<!-- repoguide:start -->
-...generated content...
-<!-- repoguide:end -->
-```
+The printed file is the same skill content shipped in the binary, so you can
+install it into a project without copying docs by hand.
 
 ## Claude Code integration
 
@@ -158,6 +145,18 @@ Add this to `.claude/settings.json`:
 The `SubagentStart` hook fires when any subagent launches. repoguide's stdout is injected into the subagent's context, giving it an instant overview of the codebase. The default output includes a preamble header that explains the format, so the agent understands what it's looking at without any additional configuration.
 
 `--cache` avoids re-parsing on every agent launch — the cache file is reused as long as no source files have changed. Add `.cache/` to your `.gitignore`.
+
+## OpenCode integration
+
+Use the bundled skill with OpenCode:
+
+```
+mkdir -p .opencode/skills/repoguide
+repoguide skill > .opencode/skills/repoguide/SKILL.md
+```
+
+That installs a local project skill describing when to run `repoguide`, how to
+read the `v2` output, and when to use focused `--symbol` or `--file` queries.
 
 ## TOON format
 
