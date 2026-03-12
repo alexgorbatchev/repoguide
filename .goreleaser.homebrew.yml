@@ -44,3 +44,15 @@ changelog:
       - "^docs:"
       - "^test:"
       - "^ci:"
+
+homebrew_casks:
+  - name: repoguide
+    binaries:
+      - repoguide
+    homepage: https://github.com/phobologic/repoguide
+    description: Generate tree-sitter repository maps in TOON format
+    directory: Casks
+    repository:
+      owner: phobologic
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
