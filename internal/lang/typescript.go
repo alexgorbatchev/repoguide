@@ -29,7 +29,7 @@ func typescriptFindEnclosingType(node *sitter.Node, source []byte) string {
 	current := node.Parent()
 	for current != nil {
 		switch current.Type() {
-		case "class_declaration", "abstract_class_declaration", "class":
+		case "class_declaration", "abstract_class_declaration", "class", "interface_declaration", "type_alias_declaration":
 			return typescriptClassName(current, source)
 		case "function_declaration", "generator_function_declaration", "function_expression", "generator_function", "arrow_function":
 			return ""
