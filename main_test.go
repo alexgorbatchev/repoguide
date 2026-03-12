@@ -35,6 +35,30 @@ def greet(user: User) -> str:
 	return dir
 }
 
+func createTypeScriptRepo(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	writeTestFile(t, dir, "models.ts", `export class User {
+	name: string
+
+	constructor(name: string) {
+		this.name = name
+	}
+}
+
+export function formatUser(user: User): string {
+	return user.name
+}
+`)
+	writeTestFile(t, dir, "main.ts", `import { User, formatUser } from "./models"
+
+export function greet(user: User): string {
+	return formatUser(user)
+}
+`)
+	return dir
+}
+
 func TestRunBasic(t *testing.T) {
 	t.Parallel()
 	dir := createSampleRepo(t)
@@ -60,6 +84,34 @@ func TestRunBasic(t *testing.T) {
 	}
 	if !strings.Contains(out, "main.py") {
 		t.Error("missing main.py")
+	}
+}
+
+func TestRunTypeScript(t *testing.T) {
+	t.Parallel()
+	dir := createTypeScriptRepo(t)
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"-l", "typescript", dir}, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("run: %v\nstderr: %s", err, stderr.String())
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "models.ts") {
+		t.Error("missing models.ts")
+	}
+	if !strings.Contains(out, "main.ts") {
+		t.Error("missing main.ts")
+	}
+	if !strings.Contains(out, "User.constructor,method") {
+		t.Error("missing TypeScript method symbol")
+	}
+	if !strings.Contains(out, "formatUser") {
+		t.Error("missing TypeScript function symbol")
+	}
+	if !strings.Contains(out, "main.ts,models.ts,User") {
+		t.Errorf("missing TypeScript dependency:\n%s", out)
 	}
 }
 

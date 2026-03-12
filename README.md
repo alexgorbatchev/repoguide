@@ -182,7 +182,7 @@ Parsing runs concurrently across all available CPU cores.
 
 ## Supported languages
 
-Python, Go, Ruby. Extensible by adding a tree-sitter grammar and a `.scm` query file to `internal/lang/queries/`.
+Python, Go, Ruby, TypeScript. Extensible by adding a tree-sitter grammar and a `.scm` query file to `internal/lang/queries/`.
 
 ## Development
 

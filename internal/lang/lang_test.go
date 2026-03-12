@@ -14,6 +14,8 @@ func TestForExtension(t *testing.T) {
 		{".py", "python"},
 		{".go", "go"},
 		{".rb", "ruby"},
+		{".ts", "typescript"},
+		{".tsx", "typescript"},
 		{".js", ""},
 		{"", ""},
 	}
@@ -32,7 +34,7 @@ func TestForExtension(t *testing.T) {
 func TestLanguagesRegistered(t *testing.T) {
 	t.Parallel()
 
-	for _, name := range []string{"python", "go", "ruby"} {
+	for _, name := range []string{"python", "go", "ruby", "typescript"} {
 		l, ok := Languages[name]
 		if !ok {
 			t.Errorf("%s language not registered", name)
@@ -47,7 +49,7 @@ func TestLanguagesRegistered(t *testing.T) {
 func TestNewParser(t *testing.T) {
 	t.Parallel()
 
-	for _, name := range []string{"python", "go", "ruby"} {
+	for _, name := range []string{"python", "go", "ruby", "typescript"} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			l := Languages[name]
@@ -62,7 +64,7 @@ func TestNewParser(t *testing.T) {
 func TestGetTagQuery(t *testing.T) {
 	t.Parallel()
 
-	for _, name := range []string{"python", "go", "ruby"} {
+	for _, name := range []string{"python", "go", "ruby", "typescript"} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			l := Languages[name]
