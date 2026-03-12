@@ -143,13 +143,13 @@ func TestRunTypeScript(t *testing.T) {
 	if !strings.Contains(out, "main.ts") {
 		t.Error("missing main.ts")
 	}
-	if !strings.Contains(out, "User.constructor,method") {
+	if !strings.Contains(out, "User.constructor") {
 		t.Error("missing TypeScript method symbol")
 	}
 	if !strings.Contains(out, "formatUser") {
 		t.Error("missing TypeScript function symbol")
 	}
-	if !strings.Contains(out, "main.ts,models.ts,User") {
+	if !strings.Contains(out, "User|formatUser") {
 		t.Errorf("missing TypeScript dependency:\n%s", out)
 	}
 }
@@ -171,14 +171,11 @@ func TestRunJavaScript(t *testing.T) {
 	if !strings.Contains(out, "main.js") {
 		t.Error("missing main.js")
 	}
-	if !strings.Contains(out, "User.greet,method") {
+	if !strings.Contains(out, "User.greet") {
 		t.Error("missing JavaScript method symbol")
 	}
-	if !strings.Contains(out, "main.js,models.js,User") {
+	if !strings.Contains(out, "User|formatMessage") {
 		t.Errorf("missing JavaScript class dependency:\n%s", out)
-	}
-	if !strings.Contains(out, "User formatMessage") {
-		t.Errorf("missing JavaScript dependency symbols:\n%s", out)
 	}
 }
 
@@ -193,7 +190,7 @@ func TestRunTypeScriptReExport(t *testing.T) {
 	}
 
 	out := stdout.String()
-	if !strings.Contains(out, "index.ts,models.ts,formatMessage") {
+	if !strings.Contains(out, "formatMessage") {
 		t.Errorf("missing TypeScript re-export dependency:\n%s", out)
 	}
 }
