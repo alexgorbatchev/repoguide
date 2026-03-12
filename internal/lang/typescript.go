@@ -12,7 +12,7 @@ import (
 func init() {
 	Languages["typescript"] = &Language{
 		Name:              "typescript",
-		Extensions:        []string{".ts", ".tsx", ".cts", ".mts"},
+		Extensions:        []string{".js", ".jsx", ".ts", ".tsx", ".cjs", ".cts", ".mjs", ".mts"},
 		lang:              tsx.GetLanguage(),
 		FindReceiverType:  typescriptFindReceiverType,
 		ExtractSignature:  typescriptExtractSignature,

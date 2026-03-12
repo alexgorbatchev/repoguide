@@ -11,12 +11,15 @@ func TestForExtension(t *testing.T) {
 		ext  string
 		want string
 	}{
+		{".js", "typescript"},
+		{".jsx", "typescript"},
 		{".py", "python"},
 		{".go", "go"},
 		{".rb", "ruby"},
 		{".ts", "typescript"},
 		{".tsx", "typescript"},
-		{".js", ""},
+		{".mjs", "typescript"},
+		{".cjs", "typescript"},
 		{"", ""},
 	}
 

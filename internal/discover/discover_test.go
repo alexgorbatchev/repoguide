@@ -78,6 +78,7 @@ func TestDiscoverLanguageFilter(t *testing.T) {
 
 	writeFile(t, dir, "main.py", "pass")
 	writeFile(t, dir, "lib.py", "pass")
+	writeFile(t, dir, "app.js", "export function run() { return true }")
 	writeFile(t, dir, "ui.tsx", "export const Button = () => <button />")
 
 	entries, err := Files(dir, []string{"python"})
@@ -92,11 +93,14 @@ func TestDiscoverLanguageFilter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Files: %v", err)
 	}
-	if len(entries) != 1 {
-		t.Fatalf("expected 1 entry for typescript filter, got %d", len(entries))
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries for typescript filter, got %d", len(entries))
 	}
-	if entries[0].Path != "ui.tsx" {
-		t.Fatalf("expected ui.tsx, got %q", entries[0].Path)
+	if entries[0].Path != "app.js" {
+		t.Fatalf("expected app.js, got %q", entries[0].Path)
+	}
+	if entries[1].Path != "ui.tsx" {
+		t.Fatalf("expected ui.tsx, got %q", entries[1].Path)
 	}
 
 	entries, err = Files(dir, []string{"javascript"})
