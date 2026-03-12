@@ -76,12 +76,24 @@ export function formatMessage(message) {
 	return message.trim()
 }
 `)
-	writeTestFile(t, dir, "main.js", `import { User, formatMessage } from "./models.js"
+	writeTestFile(t, dir, "main.js", `import { User, formatMessage as format } from "./models.js"
 
-export function greet(name) {
+	export function greet(name) {
 	const user = new User(name)
-	return formatMessage(user.greet("hi"))
+	return format(user.greet("hi"))
 }
+`)
+	return dir
+}
+
+func createTypeScriptReExportRepo(t *testing.T) string {
+	t.Helper()
+	dir := t.TempDir()
+	writeTestFile(t, dir, "models.ts", `export function formatMessage(message: string): string {
+	return message.trim()
+}
+`)
+	writeTestFile(t, dir, "index.ts", `export { formatMessage as format } from "./models"
 `)
 	return dir
 }
@@ -167,6 +179,22 @@ func TestRunJavaScript(t *testing.T) {
 	}
 	if !strings.Contains(out, "User formatMessage") {
 		t.Errorf("missing JavaScript dependency symbols:\n%s", out)
+	}
+}
+
+func TestRunTypeScriptReExport(t *testing.T) {
+	t.Parallel()
+	dir := createTypeScriptReExportRepo(t)
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"-l", "typescript", dir}, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("run: %v\nstderr: %s", err, stderr.String())
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "index.ts,models.ts,formatMessage") {
+		t.Errorf("missing TypeScript re-export dependency:\n%s", out)
 	}
 }
 

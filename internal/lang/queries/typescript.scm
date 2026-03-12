@@ -21,6 +21,13 @@
     (private_property_identifier) @name
   ]) @definition.field
 
+;; Interface and object-type fields
+(property_signature
+  name: [
+    (property_identifier) @name
+    (private_property_identifier) @name
+  ]) @definition.field
+
 ;; Class methods
 (method_definition
   name: [
@@ -29,6 +36,13 @@
   ]) @definition.method
 
 (abstract_method_signature
+  name: [
+    (property_identifier) @name
+    (private_property_identifier) @name
+  ]) @definition.method
+
+;; Interface methods
+(method_signature
   name: [
     (property_identifier) @name
     (private_property_identifier) @name
@@ -51,6 +65,13 @@
     (named_imports
       (import_specifier
         name: (identifier) @name)))) @reference.import
+
+;; Re-export references
+(export_statement
+  (export_clause
+    (export_specifier
+      name: (identifier) @name))
+  source: (string)) @reference.import
 
 (import_statement
   (import_clause

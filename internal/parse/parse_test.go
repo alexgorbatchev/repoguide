@@ -392,6 +392,74 @@ func TestTypeScriptExtractImportAndCall(t *testing.T) {
 	}
 }
 
+func TestTypeScriptExtractInterfaceMembers(t *testing.T) {
+	t.Parallel()
+	_, extract := setup(t, "typescript")
+
+	source := `export interface Formatter {
+	name: string
+	format(message: string): string
+}
+`
+	tags := extract(source)
+	defs := filterDefs(tags)
+
+	names := make(map[string]model.Tag)
+	for _, def := range defs {
+		names[def.Name] = def
+	}
+
+	if _, ok := names["Formatter"]; !ok {
+		t.Fatalf("missing Formatter interface: %+v", defs)
+	}
+	fieldDef, ok := names["Formatter.name"]
+	if !ok {
+		t.Fatalf("missing Formatter.name field: %+v", defs)
+	}
+	if fieldDef.Signature != "name: string" {
+		t.Errorf("field sig = %q", fieldDef.Signature)
+	}
+	methodDef, ok := names["Formatter.format"]
+	if !ok {
+		t.Fatalf("missing Formatter.format method: %+v", defs)
+	}
+	if methodDef.Signature != "format(message: string) : string" {
+		t.Errorf("method sig = %q", methodDef.Signature)
+	}
+}
+
+func TestTypeScriptExtractAliasedImportAndReExport(t *testing.T) {
+	t.Parallel()
+	_, extract := setup(t, "typescript")
+
+	source := `import { formatMessage as format } from "./format"
+	export { formatMessage as formatText } from "./format"
+
+	export function greet(name: string): string {
+		return format(name)
+	}
+`
+	tags := extract(source)
+	refs := filterRefs(tags)
+
+	var importCount int
+	var callRef *model.Tag
+	for i := range refs {
+		if refs[i].Name == "formatMessage" {
+			importCount++
+		}
+		if refs[i].Name == "format" && refs[i].Enclosing == "greet" {
+			callRef = &refs[i]
+		}
+	}
+	if importCount != 2 {
+		t.Fatalf("expected 2 formatMessage import refs, got %d: %+v", importCount, refs)
+	}
+	if callRef == nil {
+		t.Fatalf("missing aliased call ref: %+v", refs)
+	}
+}
+
 // --- Ruby tests ---
 
 func TestRubyExtractClass(t *testing.T) {
