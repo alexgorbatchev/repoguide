@@ -1,21 +1,28 @@
+version: "2"
 linters:
   enable:
-    - errcheck
-    - govet
-    - staticcheck
-    - unused
-    - gosimple
-    - ineffassign
-    - goimports
+    - gocritic
     - misspell
     - unconvert
-    - gocritic
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/phobologic/repoguide
-
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  exclude-use-default: false
   max-issues-per-linter: 0
   max-same-issues: 0
+formatters:
+  enable:
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/phobologic/repoguide
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
