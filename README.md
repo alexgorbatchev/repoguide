@@ -4,7 +4,7 @@ Tree-sitter repository map in TOON format for LLM consumption.
 
 ## What it does
 
-repoguide parses a codebase with tree-sitter, extracts symbols (classes, functions, methods, imports), builds a file-to-file dependency graph, and ranks files by PageRank. The output is a compact TOON-formatted map designed to fit in an LLM context window.
+repoguide parses a codebase with tree-sitter, extracts symbols (classes, functions, methods, constants, imports), builds a file-to-file dependency graph, and ranks files by PageRank. The output is a compact TOON-formatted map designed to fit in an LLM context window.
 
 The goal: give an LLM agent a high-level map of a codebase so it can explore more effectively — knowing which files matter most, what symbols they define, and how they depend on each other.
 

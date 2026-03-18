@@ -96,7 +96,7 @@ func encodeSitesV2(sites []model.CallSite, fileIDs map[string]string, fileRanks 
 }
 
 func encodeDefinitionsV2(rm *model.RepoMap, fileIDs map[string]string, includeSignatures bool) ([]string, [][]string) {
-	tables := map[string][][]string{"c": nil, "f": nil, "m": nil, "fld": nil}
+	tables := map[string][][]string{"c": nil, "f": nil, "m": nil, "fld": nil, "const": nil}
 	var signatureRows [][]string
 
 	for i := range rm.Files {
@@ -123,6 +123,7 @@ func encodeDefinitionsV2(rm *model.RepoMap, fileIDs map[string]string, includeSi
 		formatTabular("defs.f", []string{"file", "line", "name"}, tables["f"]),
 		formatTabular("defs.m", []string{"file", "line", "name"}, tables["m"]),
 		formatTabular("defs.fld", []string{"file", "line", "name"}, tables["fld"]),
+		formatTabular("defs.const", []string{"file", "line", "name"}, tables["const"]),
 	}
 
 	return encoded, signatureRows
@@ -203,6 +204,8 @@ func shortKind(kind model.SymbolKind) string {
 		return "m"
 	case model.Field:
 		return "fld"
+	case model.Constant:
+		return "const"
 	default:
 		return string(kind)
 	}

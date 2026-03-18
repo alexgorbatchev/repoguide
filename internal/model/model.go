@@ -17,6 +17,7 @@ const (
 	Field    SymbolKind = "field"
 	Function SymbolKind = "function"
 	Method   SymbolKind = "method"
+	Constant SymbolKind = "const"
 	Module   SymbolKind = "module"
 )
 

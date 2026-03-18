@@ -69,6 +69,8 @@ func typescriptExtractSignature(defNode *sitter.Node, kind model.SymbolKind, sou
 		return typescriptExtractTypeSignature(defNode, source)
 	case model.Field:
 		return typescriptExtractFieldSignature(defNode, source)
+	case model.Constant:
+		return typescriptExtractConstantSignature(defNode, source)
 	default:
 		return typescriptExtractFunctionSignature(defNode, source)
 	}
@@ -83,6 +85,14 @@ func typescriptExtractTypeSignature(node *sitter.Node, source []byte) string {
 }
 
 func typescriptExtractFieldSignature(node *sitter.Node, source []byte) string {
+	return typescriptExtractNamedTypeSignature(node, source)
+}
+
+func typescriptExtractConstantSignature(node *sitter.Node, source []byte) string {
+	return typescriptExtractNamedTypeSignature(node, source)
+}
+
+func typescriptExtractNamedTypeSignature(node *sitter.Node, source []byte) string {
 	name := typescriptPropertyName(node.ChildByFieldName("name"), source)
 	if name == "" {
 		return CollapseWhitespace(NodeText(node, source))
