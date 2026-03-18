@@ -2,10 +2,13 @@
 package ranking
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/phobologic/repoguide/internal/model"
 )
+
+type stringMatcher func(string) bool
 
 // SelectFiles returns a new RepoMap with only the top-ranked files.
 // If maxFiles is <= 0 or >= len(files), all files are returned.
@@ -78,7 +81,23 @@ func SelectFiles(rm *model.RepoMap, maxFiles int) *model.RepoMap {
 // over member names (the unqualified part after ".").
 func FilterBySymbol(rm *model.RepoMap, substr string, withMembers bool) *model.RepoMap {
 	lower := strings.ToLower(substr)
+	return filterBySymbol(rm, func(name string) bool {
+		return strings.Contains(strings.ToLower(name), lower)
+	}, withMembers)
+}
 
+// FilterBySymbolRegex returns a new RepoMap containing only symbols whose name
+// matches re, the files that define those symbols, and related call/dependency
+// edges. The regex uses Go's RE2 syntax and is case-sensitive unless the
+// pattern includes inline flags such as (?i).
+func FilterBySymbolRegex(rm *model.RepoMap, re *regexp.Regexp, withMembers bool) *model.RepoMap {
+	if re == nil {
+		return emptyRepoMap(rm)
+	}
+	return filterBySymbol(rm, re.MatchString, withMembers)
+}
+
+func filterBySymbol(rm *model.RepoMap, matches stringMatcher, withMembers bool) *model.RepoMap {
 	// Find matched symbols and their files, excluding field tags from the primary
 	// symbol match (fields are handled separately via the members mechanism).
 	matchedSymbols := make(map[string]struct{})
@@ -86,8 +105,7 @@ func FilterBySymbol(rm *model.RepoMap, substr string, withMembers bool) *model.R
 	for i := range rm.Files {
 		for j := range rm.Files[i].Tags {
 			tag := &rm.Files[i].Tags[j]
-			if tag.Kind == model.Definition && tag.SymbolKind != model.Field &&
-				strings.Contains(strings.ToLower(tag.Name), lower) {
+			if tag.Kind == model.Definition && tag.SymbolKind != model.Field && matches(tag.Name) {
 				matchedSymbols[tag.Name] = struct{}{}
 				matchedFiles[rm.Files[i].Path] = struct{}{}
 			}
@@ -95,7 +113,7 @@ func FilterBySymbol(rm *model.RepoMap, substr string, withMembers bool) *model.R
 	}
 
 	// Member fallback: if no top-level defs matched and withMembers is requested,
-	// search field tags whose unqualified name (part after ".") contains substr.
+	// search field tags whose unqualified name (part after ".") matches.
 	// Include the owning class in matched symbols for context.
 	if withMembers && len(matchedSymbols) == 0 {
 		for i := range rm.Files {
@@ -108,7 +126,7 @@ func FilterBySymbol(rm *model.RepoMap, substr string, withMembers bool) *model.R
 				if dot := strings.LastIndex(tag.Name, "."); dot >= 0 {
 					unqualified = tag.Name[dot+1:]
 				}
-				if strings.Contains(strings.ToLower(unqualified), lower) {
+				if matches(unqualified) {
 					matchedSymbols[tag.Name] = struct{}{}
 					matchedFiles[rm.Files[i].Path] = struct{}{}
 				}
@@ -247,11 +265,26 @@ func FilterBySymbol(rm *model.RepoMap, substr string, withMembers bool) *model.R
 // those files and call edges from functions defined in those files.
 func FilterByFile(rm *model.RepoMap, substr string) *model.RepoMap {
 	lower := strings.ToLower(substr)
+	return filterByFile(rm, func(path string) bool {
+		return strings.Contains(strings.ToLower(path), lower)
+	})
+}
 
+// FilterByFileRegex returns a new RepoMap containing only files whose path
+// matches re, with all dependency edges touching those files and call edges
+// from functions defined in those files. The regex uses Go's RE2 syntax.
+func FilterByFileRegex(rm *model.RepoMap, re *regexp.Regexp) *model.RepoMap {
+	if re == nil {
+		return emptyRepoMap(rm)
+	}
+	return filterByFile(rm, re.MatchString)
+}
+
+func filterByFile(rm *model.RepoMap, matches stringMatcher) *model.RepoMap {
 	matchedFiles := make(map[string]struct{})
 	var files []model.FileInfo
 	for i := range rm.Files {
-		if strings.Contains(strings.ToLower(rm.Files[i].Path), lower) {
+		if matches(rm.Files[i].Path) {
 			matchedFiles[rm.Files[i].Path] = struct{}{}
 			files = append(files, rm.Files[i])
 		}
@@ -302,4 +335,11 @@ func FilterByFile(rm *model.RepoMap, substr string) *model.RepoMap {
 		CallEdges:    callEdges,
 		CallSites:    callSites,
 	}
+}
+
+func emptyRepoMap(rm *model.RepoMap) *model.RepoMap {
+	if rm == nil {
+		return &model.RepoMap{}
+	}
+	return &model.RepoMap{RepoName: rm.RepoName, Root: rm.Root}
 }

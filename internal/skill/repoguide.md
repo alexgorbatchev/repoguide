@@ -25,7 +25,9 @@ repoguide . -n 20
 repoguide . -l go,typescript
 repoguide . --with-tests
 repoguide . --symbol BuildGraph
+repoguide . --symbol-regex '^(?i)build.*'
 repoguide . --file internal/lang
+repoguide . --file-regex '(^|/)internal/lang'
 repoguide . --symbol Handle --file server
 ```
 
@@ -35,7 +37,7 @@ repoguide . --symbol Handle --file server
 2. Scan `files` to find the most central files.
 3. Scan `defs.*` to find definitions by kind.
 4. Scan `deps` to see cross-file relationships.
-5. Use `--symbol` or `--file` for focused follow-up queries.
+5. Use `--symbol` / `--file` (substring) or `--symbol-regex` / `--file-regex` (regex) for focused follow-up queries.
 6. Read only the small number of files suggested by the map.
 
 ## How To Read v2 Output
@@ -63,17 +65,31 @@ Use `--symbol` when the user names a function, method, class, or concept that li
 repoguide . --symbol BuildGraph
 ```
 
+Use `--symbol-regex` when the user describes a naming pattern.
+
+```bash
+repoguide . --symbol-regex '^(?i)build.*graph$'
+```
+
 Use `--file` when the user points to a package, directory, or feature area.
 
 ```bash
 repoguide . --file internal/parse
 ```
 
-Combine both when the user asks about a symbol inside a subsystem.
+Use `--file-regex` when the user describes a path pattern.
+
+```bash
+repoguide . --file-regex '(^|/)parse/'
+```
+
+Combine symbol and file filters when the user asks about a symbol inside a subsystem.
 
 ```bash
 repoguide . --symbol Prompt --file session
 ```
+
+Focused filters match extracted symbol names and discovered file paths (semantic map data), not arbitrary file content lines. Use `rg` for grep-style full-text searches.
 
 ## Choosing Format
 
@@ -103,11 +119,12 @@ repoguide . --cache .cache/repoguide.toon
 
 - Before broad refactors, run a full cached map.
 - Before answering architecture questions, inspect `files`, `defs.*`, and `deps`.
-- Before reading many files, use `--symbol` or `--file` to narrow the search.
+- Before reading many files, use `--symbol` / `--file` or regex variants to narrow the search.
 - For repeated agent sessions, keep `.cache/repoguide.toon` warm.
 
 ## Avoid
 
 - Do not read dozens of files before checking the map.
 - Do not default to `--with-tests` unless test structure matters.
+- Do not use repoguide focused filters as a line-by-line grep replacement; use `rg` for full-text matching.
 - Do not prefer `v1` unless compatibility is required.

@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -38,28 +39,27 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer) error {
-	if len(args) > 0 {
-		switch args[0] {
-		case "skill":
-			return runSkill(args[1:], stdout, stderr)
-		}
+	if len(args) > 0 && args[0] == "skill" {
+		return runSkill(args[1:], stdout, stderr)
 	}
 
 	fs := flag.NewFlagSet("repoguide", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 
 	var (
-		maxFiles     int
-		langs        string
-		cachePath    string
-		outputFormat string
-		maxFileSize  int
-		showVersion  bool
-		raw          bool
-		withTests    bool
-		withMembers  bool
-		symbolFilter string
-		fileFilter   string
+		maxFiles          int
+		langs             string
+		cachePath         string
+		outputFormat      string
+		maxFileSize       int
+		showVersion       bool
+		raw               bool
+		withTests         bool
+		withMembers       bool
+		symbolFilter      string
+		symbolRegexFilter string
+		fileFilter        string
+		fileRegexFilter   string
 	)
 
 	fs.IntVar(&maxFiles, "n", 0, "maximum number of files to include")
@@ -73,9 +73,11 @@ func run(args []string, stdout, stderr io.Writer) error {
 	fs.BoolVar(&showVersion, "version", false, "show version and exit")
 	fs.BoolVar(&raw, "raw", false, "output raw TOON without agent context header")
 	fs.BoolVar(&withTests, "with-tests", false, "include test files in output (excluded by default)")
-	fs.BoolVar(&withMembers, "members", false, "include member fields/methods for matched class symbols (use with --symbol)")
+	fs.BoolVar(&withMembers, "members", false, "include member fields/methods for matched class symbols (use with --symbol/--symbol-regex)")
 	fs.StringVar(&symbolFilter, "symbol", "", "filter output to symbols matching this `substring` (case-insensitive)")
+	fs.StringVar(&symbolRegexFilter, "symbol-regex", "", "filter output to symbols matching this `regex` (RE2)")
 	fs.StringVar(&fileFilter, "file", "", "filter output to files matching this `substring` (case-insensitive)")
+	fs.StringVar(&fileRegexFilter, "file-regex", "", "filter output to files matching this `regex` (RE2)")
 
 	fs.Usage = func() {
 		_, _ = fmt.Fprintf(stderr, `Usage: repoguide [flags] [path]
@@ -103,8 +105,13 @@ Examples:
   repoguide --with-tests                     include test files (excluded by default)
   repoguide --symbol BuildGraph              show BuildGraph and its callers/callees
   repoguide --symbol encode                  case-insensitive: matches Encode, encodeValue
+  repoguide --symbol-regex '^(?i)build.*'    regex symbol search (RE2; supports inline flags)
   repoguide --file internal/toon             symbols and deps for the toon package
+  repoguide --file-regex '(^|/)toon/'        regex file path search
   repoguide --symbol Encode --file toon      combined: symbol AND file filter
+
+Focused filters (--symbol*, --file*) match extracted symbols and file paths,
+not arbitrary file content lines. Use rg for grep-style full-text search.
 
 Flags:
 `)
@@ -154,6 +161,31 @@ Flags:
 		}
 	}
 
+	if symbolFilter != "" && symbolRegexFilter != "" {
+		return fmt.Errorf("use only one of --symbol or --symbol-regex")
+	}
+	if fileFilter != "" && fileRegexFilter != "" {
+		return fmt.Errorf("use only one of --file or --file-regex")
+	}
+
+	var symbolRegex *regexp.Regexp
+	if symbolRegexFilter != "" {
+		symbolRegexCompiled, compileErr := regexp.Compile(symbolRegexFilter)
+		if compileErr != nil {
+			return fmt.Errorf("invalid --symbol-regex pattern: %w", compileErr)
+		}
+		symbolRegex = symbolRegexCompiled
+	}
+
+	var fileRegex *regexp.Regexp
+	if fileRegexFilter != "" {
+		fileRegexCompiled, compileErr := regexp.Compile(fileRegexFilter)
+		if compileErr != nil {
+			return fmt.Errorf("invalid --file-regex pattern: %w", compileErr)
+		}
+		fileRegex = fileRegexCompiled
+	}
+
 	// Discover files
 	files, err := discover.Files(root, langFilter)
 	if err != nil {
@@ -181,7 +213,7 @@ Flags:
 	// Check cache freshness (skip when filter flags are active).
 	// --with-tests bypasses the cache so it never overwrites the default
 	// (test-excluded) cache with test-included output.
-	focused := symbolFilter != "" || fileFilter != ""
+	focused := symbolFilter != "" || symbolRegex != nil || fileFilter != "" || fileRegex != nil
 	filterActive := focused || withTests
 	if !filterActive && cachePath != "" && cacheIsFresh(cachePath, root, files) {
 		data, err := os.ReadFile(cachePath)
@@ -225,10 +257,14 @@ Flags:
 	if filterActive {
 		rm.CallSites = graph.BuildCallSites(fileInfos)
 	}
-	if symbolFilter != "" {
+	if symbolRegex != nil {
+		rm = ranking.FilterBySymbolRegex(rm, symbolRegex, withMembers)
+	} else if symbolFilter != "" {
 		rm = ranking.FilterBySymbol(rm, symbolFilter, withMembers)
 	}
-	if fileFilter != "" {
+	if fileRegex != nil {
+		rm = ranking.FilterByFileRegex(rm, fileRegex)
+	} else if fileFilter != "" {
 		rm = ranking.FilterByFile(rm, fileFilter)
 	}
 
@@ -391,7 +427,9 @@ var flagsWithValue = map[string]bool{
 	"-format": true, "--format": true,
 	"-max-file-size": true, "--max-file-size": true,
 	"-symbol": true, "--symbol": true,
+	"-symbol-regex": true, "--symbol-regex": true,
 	"-file": true, "--file": true,
+	"-file-regex": true, "--file-regex": true,
 }
 
 // reorderArgs moves positional arguments after all flags so Go's flag package
