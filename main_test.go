@@ -520,6 +520,37 @@ func TestRunSymbolFilter(t *testing.T) {
 	}
 }
 
+func TestRunSymbolRegexFilter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	writeTestFile(t, dir, "utils.py", "def helper():\n    pass\n")
+	writeTestFile(t, dir, "main.py", "def greet():\n    helper()\n")
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"--symbol-regex", "^h.*r$", dir}, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("run: %v\nstderr: %s", err, stderr.String())
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "helper") {
+		t.Fatalf("expected helper match in regex output:\n%s", out)
+	}
+}
+
+func TestRunSymbolRegexFilterInvalidPattern(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"--symbol-regex", "(", t.TempDir()}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected invalid regex error")
+	}
+	if !strings.Contains(err.Error(), "invalid --symbol-regex pattern") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestRunSymbolFilterNoMatch(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -562,6 +593,40 @@ func TestRunFileFilter(t *testing.T) {
 	}
 }
 
+func TestRunFileRegexFilter(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	writeTestFile(t, dir, "pkg/utils.py", "def helper():\n    pass\n")
+	writeTestFile(t, dir, "other/main.py", "def greet():\n    pass\n")
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"--file-regex", "^pkg/.*\\.py$", dir}, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("run: %v\nstderr: %s", err, stderr.String())
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "pkg/utils.py") {
+		t.Fatalf("expected pkg/utils.py in output:\n%s", out)
+	}
+	if strings.Contains(out, "other/main.py") {
+		t.Fatalf("did not expect other/main.py in output:\n%s", out)
+	}
+}
+
+func TestRunFileRegexFilterInvalidPattern(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"--file-regex", "(", t.TempDir()}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected invalid regex error")
+	}
+	if !strings.Contains(err.Error(), "invalid --file-regex pattern") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestRunSymbolAndFileFilter(t *testing.T) {
 	t.Parallel()
 	dir := t.TempDir()
@@ -578,6 +643,32 @@ func TestRunSymbolAndFileFilter(t *testing.T) {
 	// --file pkg filters to pkg/utils.py; --symbol helper must be in that file.
 	if !strings.Contains(out, "pkg/utils.py") {
 		t.Errorf("pkg/utils.py should be in output:\n%s", out)
+	}
+}
+
+func TestRunSymbolAndSymbolRegexMutuallyExclusive(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"--symbol", "foo", "--symbol-regex", "foo", t.TempDir()}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected mutually exclusive symbol filter error")
+	}
+	if !strings.Contains(err.Error(), "use only one of --symbol or --symbol-regex") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRunFileAndFileRegexMutuallyExclusive(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+	err := run([]string{"--file", "foo", "--file-regex", "foo", t.TempDir()}, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected mutually exclusive file filter error")
+	}
+	if !strings.Contains(err.Error(), "use only one of --file or --file-regex") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -653,6 +744,7 @@ func TestReorderArgs(t *testing.T) {
 		{"positional first", []string{".", "-n", "5"}, []string{"-n", "5", "."}},
 		{"mixed", []string{"-l", "python", ".", "-n", "5"}, []string{"-l", "python", "-n", "5", "."}},
 		{"multi-lang", []string{"-l", "go,ruby", "."}, []string{"-l", "go,ruby", "."}},
+		{"regex filter", []string{".", "--symbol-regex", "^Foo$"}, []string{"--symbol-regex", "^Foo$", "."}},
 		{"no flags", []string{"."}, []string{"."}},
 		{"no args", nil, nil},
 		{"bool flag", []string{"-V"}, []string{"-V"}},

@@ -1,6 +1,7 @@
 package ranking
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/phobologic/repoguide/internal/model"
@@ -195,6 +196,28 @@ func TestFilterBySymbolSubstring(t *testing.T) {
 	}
 }
 
+func TestFilterBySymbolRegex(t *testing.T) {
+	t.Parallel()
+
+	rm := makeFilterRepoMap()
+	got := FilterBySymbolRegex(rm, regexp.MustCompile(`^Ba`), false)
+
+	if len(got.Files) < 2 {
+		t.Fatalf("expected at least 2 files for ^Ba, got %d: %v", len(got.Files), fileNames(got))
+	}
+}
+
+func TestFilterBySymbolRegexInlineCaseInsensitive(t *testing.T) {
+	t.Parallel()
+
+	rm := makeFilterRepoMap()
+	got := FilterBySymbolRegex(rm, regexp.MustCompile(`(?i)^foo$`), false)
+
+	if len(got.Files) == 0 {
+		t.Fatal("expected inline case-insensitive regex to match Foo")
+	}
+}
+
 func TestFilterBySymbolCallExpansion(t *testing.T) {
 	t.Parallel()
 
@@ -285,6 +308,17 @@ func TestFilterByFileSubstring(t *testing.T) {
 
 	if len(got.Files) != 3 {
 		t.Fatalf("expected 3 files for '.go', got %d", len(got.Files))
+	}
+}
+
+func TestFilterByFileRegex(t *testing.T) {
+	t.Parallel()
+
+	rm := makeFilterRepoMap()
+	got := FilterByFileRegex(rm, regexp.MustCompile(`^[ab]\.go$`))
+
+	if len(got.Files) != 2 {
+		t.Fatalf("expected 2 files for regex, got %d: %v", len(got.Files), fileNames(got))
 	}
 }
 

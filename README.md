@@ -47,7 +47,9 @@ repoguide [ROOT] [OPTIONS]
 | `--format` | Output format: `v2` (default) or legacy `v1` |
 | `--max-file-size` | Skip files larger than this many bytes (default: 1MB) |
 | `--symbol` | Filter output to symbols matching this substring (case-insensitive) |
+| `--symbol-regex` | Filter output to symbols matching this regex (RE2; use `(?i)` for case-insensitive) |
 | `--file` | Filter output to files matching this substring (case-insensitive) |
+| `--file-regex` | Filter output to files matching this regex (RE2; use `(?i)` for case-insensitive) |
 | `--with-tests` | Include test files in output (excluded by default) |
 | `--raw` | Output raw TOON without agent context header |
 | `--version`, `-V` | Show version and exit |
@@ -84,20 +86,27 @@ deps[1]{edge,symbols}:
 
 ### Focused queries
 
-Use `--symbol` and `--file` to get a targeted view instead of the full map.
-These are useful when asking Claude about a specific function or subsystem.
+Use `--symbol` / `--file` (substring) or `--symbol-regex` / `--file-regex`
+(regex) to get a targeted view instead of the full map. These are useful when
+asking Claude about a specific function or subsystem.
 
 ```
-repoguide --symbol BuildGraph        # show BuildGraph: definition, callers, callees, import sites
-repoguide --file internal/auth       # show all symbols and deps for auth package
-repoguide --symbol Handle --file srv # combine: Handle symbol scoped to srv files
+repoguide --symbol BuildGraph                   # substring match (case-insensitive)
+repoguide --symbol-regex '^(?i)build.*graph$'  # regex match on symbol names
+repoguide --file internal/auth                  # substring match on file paths
+repoguide --file-regex '(^|/)auth/'            # regex match on file paths
+repoguide --symbol Handle --file srv            # combine (AND semantics)
 ```
 
-Both flags do case-insensitive substring matching and can be combined (AND semantics).
-When active, the cache is bypassed for reading but the full unfiltered output is still
-written to cache on the same run.
+Substring flags are case-insensitive. Regex flags use Go RE2 syntax and are
+case-sensitive unless you add inline flags like `(?i)`.
+These focused filters operate on extracted symbol names and discovered file
+paths (semantic map data), not raw file content lines.
+Use `rg` for full-text grep-style searches.
+When active, focused filters bypass cache reads but the full unfiltered output
+is still written to cache on the same run.
 
-The `--symbol` output includes a `callsites` table with every call occurrence *and*
+Focused symbol output (`--symbol` or `--symbol-regex`) includes a `callsites` table with every call occurrence *and*
 every file-level import site, each with exact file and line number. Use those line
 numbers with `Read(offset=N)` for precise navigation without scanning.
 
