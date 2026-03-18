@@ -4,7 +4,7 @@ Tree-sitter repository map in TOON format for LLM consumption.
 
 ## What it does
 
-repoguide parses a codebase with tree-sitter, extracts symbols (classes, functions, methods, imports), builds a file-to-file dependency graph, and ranks files by PageRank. The output is a compact TOON-formatted map designed to fit in an LLM context window.
+repoguide parses a codebase with tree-sitter, extracts symbols (classes, functions, methods, constants, imports), builds a file-to-file dependency graph, and ranks files by PageRank. The output is a compact TOON-formatted map designed to fit in an LLM context window.
 
 The goal: give an LLM agent a high-level map of a codebase so it can explore more effectively — knowing which files matter most, what symbols they define, and how they depend on each other.
 
@@ -180,7 +180,7 @@ The output uses TOON (Text Object Oriented Notation), a compact format designed 
 ## How it works
 
 1. **Discover files** — uses `git ls-files` when available, falls back to `.gitignore`-based filtering
-2. **Parse with tree-sitter** — extracts classes, functions, methods, and imports from each file
+2. **Parse with tree-sitter** — extracts classes, functions, methods, constants, and imports from each file
 3. **Build dependency graph** — creates file-to-file edges based on shared symbols (imports that resolve to definitions in other files)
 4. **Rank with PageRank** — scores files by importance in the dependency graph
 5. **Select top N** — when `--max-files` is set, keeps only the highest-ranked files

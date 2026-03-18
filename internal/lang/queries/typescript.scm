@@ -55,6 +55,12 @@
 (generator_function_declaration
   name: (identifier) @name) @definition.function
 
+;; Constant declarations
+(lexical_declaration
+  kind: "const"
+  (variable_declarator
+    name: (identifier) @name) @definition.constant)
+
 ;; Import references
 (import_statement
   (import_clause

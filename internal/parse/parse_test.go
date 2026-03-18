@@ -314,6 +314,49 @@ func TestTypeScriptExtractFunction(t *testing.T) {
 	}
 }
 
+func TestTypeScriptExtractConst(t *testing.T) {
+	t.Parallel()
+	_, extract := setup(t, "typescript")
+
+	source := `export const MAX_RETRIES: number = 3
+const runtime = createRuntime()
+let ignored = 0
+`
+	tags := extract(source)
+	defs := filterDefs(tags)
+
+	names := make(map[string]model.Tag)
+	for _, def := range defs {
+		names[def.Name] = def
+	}
+
+	maxRetriesDef, ok := names["MAX_RETRIES"]
+	if !ok {
+		t.Fatalf("missing MAX_RETRIES const: %+v", defs)
+	}
+	if maxRetriesDef.SymbolKind != model.Constant {
+		t.Fatalf("kind = %q, want const", maxRetriesDef.SymbolKind)
+	}
+	if maxRetriesDef.Signature != "MAX_RETRIES: number" {
+		t.Fatalf("sig = %q", maxRetriesDef.Signature)
+	}
+
+	runtimeDef, ok := names["runtime"]
+	if !ok {
+		t.Fatalf("missing runtime const: %+v", defs)
+	}
+	if runtimeDef.SymbolKind != model.Constant {
+		t.Fatalf("kind = %q, want const", runtimeDef.SymbolKind)
+	}
+	if runtimeDef.Signature != "runtime" {
+		t.Fatalf("sig = %q", runtimeDef.Signature)
+	}
+
+	if _, ok := names["ignored"]; ok {
+		t.Fatalf("let declaration should not be extracted: %+v", defs)
+	}
+}
+
 func TestTypeScriptExtractClassMembers(t *testing.T) {
 	t.Parallel()
 	_, extract := setup(t, "typescript")

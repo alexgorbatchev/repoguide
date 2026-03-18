@@ -45,7 +45,7 @@ repoguide . --symbol Handle --file server
 Default output is `v2`.
 
 - `files[id,rank,path]`: ranked files; lower repetition than v1
-- `defs.c`, `defs.f`, `defs.m`, `defs.fld`: definitions split by kind
+- `defs.c`, `defs.f`, `defs.m`, `defs.fld`, `defs.const`: definitions split by kind
 - `deps[edge,symbols]`: file-to-file dependencies such as `f3->f1`
 - `calls[edge]`: call graph edges like `caller->callee`
 - focused queries may also include `callsites` and `sig`

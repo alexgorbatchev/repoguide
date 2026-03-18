@@ -336,6 +336,35 @@ func TestEncodeV2(t *testing.T) {
 	}
 }
 
+func TestEncodeV2IncludesConstDefinitions(t *testing.T) {
+	t.Parallel()
+
+	rm := &model.RepoMap{
+		RepoName: "r",
+		Root:     "r",
+		Files: []model.FileInfo{{
+			Path:     "src/config.ts",
+			Language: "typescript",
+			Rank:     1.0,
+			Tags: []model.Tag{{
+				Name:       "MAX_RETRIES",
+				Kind:       model.Definition,
+				SymbolKind: model.Constant,
+				Line:       3,
+				Signature:  "MAX_RETRIES: number",
+			}},
+		}},
+	}
+
+	got := Encode(rm, false, FormatV2)
+	if !strings.Contains(got, "defs.const[1]{file,line,name}:") {
+		t.Fatalf("missing const defs table:\n%s", got)
+	}
+	if !strings.Contains(got, "  f1,3,MAX_RETRIES") {
+		t.Fatalf("missing const definition row:\n%s", got)
+	}
+}
+
 func TestEncodeV2Focused(t *testing.T) {
 	t.Parallel()
 

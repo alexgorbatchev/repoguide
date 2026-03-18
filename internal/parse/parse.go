@@ -18,6 +18,7 @@ var captureMap = map[string]struct {
 	"definition.field":    {model.Definition, model.Field},
 	"definition.function": {model.Definition, model.Function},
 	"definition.method":   {model.Definition, model.Method},
+	"definition.constant": {model.Definition, model.Constant},
 	"reference.call":      {model.Reference, model.Function},
 	"reference.import":    {model.Reference, model.Module},
 }
